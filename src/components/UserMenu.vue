@@ -71,6 +71,14 @@
         <q-item-section>Events</q-item-section>
       </q-item>
 
+      <!-- Data Beheer (alleen zichtbaar voor baaneigenaren en moderators) -->
+      <q-item v-if="isOwnerOrModerator" clickable v-close-popup to="/data-management">
+        <q-item-section avatar>
+          <q-icon name="database" />
+        </q-item-section>
+        <q-item-section>Data Beheer</q-item-section>
+      </q-item>
+
       <!-- Vernieuwen -->
       <q-item clickable v-close-popup @click="handleRefresh">
         <q-item-section avatar>

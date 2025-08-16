@@ -129,6 +129,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/usermenu/ModeratorApprovalPage.vue'),
         meta: { requiresAuth: true },
       },
+      {
+        path: '/data-management',
+        name: 'data-management',
+        component: () => import('pages/usermenu/DataManagementPage.vue'),
+        meta: { requiresAuth: true },
+      },
     ],
   },
   {

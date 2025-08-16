@@ -26,16 +26,13 @@
           input-debounce="300"
           @update:model-value="onCourseChange"
         >
-          <template v-slot:option="{ opt, selected, toggleOption }">
+          <template v-slot:option="{ opt, toggleOption }">
             <q-item clickable @click="toggleOption(opt)">
               <q-item-section>
                 <q-item-label>{{ opt.name }}</q-item-label>
                 <q-item-label caption>
                   {{ opt.city }}{{ opt.countryName ? `, ${opt.countryName}` : '' }}
                 </q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-checkbox :model-value="selected" />
               </q-item-section>
             </q-item>
           </template>
@@ -59,16 +56,13 @@
           :disable="!selectedCourse"
           @update:model-value="onEventChange"
         >
-          <template v-slot:option="{ opt, selected, toggleOption }">
+          <template v-slot:option="{ opt, toggleOption }">
             <q-item clickable @click="toggleOption(opt)">
               <q-item-section>
                 <q-item-label>{{ opt.name }}</q-item-label>
                 <q-item-label caption>
                   {{ formatDate(opt.startdate) }}
                 </q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-checkbox :model-value="selected" />
               </q-item-section>
             </q-item>
           </template>
@@ -87,6 +81,55 @@
             :holes="courseHoles"
             :country="selectedEventCourseCountry"
           />
+        </div>
+      </div>
+
+      <!-- Live Ticker - over de hele breedte -->
+      <div v-if="false" class="row q-mb-lg">
+        <div class="col-12">
+          <div class="live-ticker-full">
+            <div class="ticker-header-minimal">
+              <q-icon name="live_tv" color="red" size="sm" class="q-mr-xs" />
+              <span class="text-caption text-weight-medium">Live ticker</span>
+            </div>
+            <div class="ticker-container-full">
+              <div
+                class="ticker-content-full"
+                :style="{ transform: `translateX(${tickerPosition}px)` }"
+              >
+                <!-- Buffer spaties aan het begin -->
+                <span class="ticker-buffer"
+                  >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
+                >
+
+                <!-- Scores -->
+                <span
+                  v-for="(score, index) in tickerQueue"
+                  :key="`${score.id}-${index}`"
+                  class="ticker-text-full"
+                >
+                  <q-icon name="golf_course" color="primary" size="xs" class="q-mr-xs" />
+                  <span class="text-weight-medium">{{ score.playerName }}</span>
+                  <span>&nbsp;maakt een&nbsp;</span>
+                  <span class="text-weight-bold" :class="getScoreColorClass(score.scoreVsPar)">
+                    {{ score.score }}
+                  </span>
+                  <span>&nbsp;op hole&nbsp;</span>
+                  <span class="text-weight-bold">{{ score.holeNumber }}</span>
+                  <span>&nbsp;en gaat daarmee naar&nbsp;</span>
+                  <span class="text-weight-bold" :class="getScoreColorClass(score.totalScoreVsPar)">
+                    {{ score.totalScoreVsPar >= 0 ? '+' : '' }}{{ score.totalScoreVsPar }}
+                  </span>
+                  <span class="ticker-separator-full">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                </span>
+
+                <!-- Buffer spaties aan het einde -->
+                <span class="ticker-buffer"
+                  >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
+                >
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -126,8 +169,18 @@
                     :loading="refreshing"
                     size="sm"
                   >
-                    <q-tooltip>Vernieuwen</q-tooltip>
+                    <q-tooltip>Handmatig vernieuwen</q-tooltip>
                   </q-btn>
+                </div>
+                <div class="col-auto">
+                  <q-chip
+                    :color="roundsSubscription ? 'positive' : 'grey'"
+                    :icon="roundsSubscription ? 'wifi' : 'wifi_off'"
+                    size="sm"
+                    dense
+                  >
+                    {{ roundsSubscription ? 'Live' : 'Polling' }}
+                  </q-chip>
                 </div>
               </div>
 
@@ -246,9 +299,10 @@
                     <div class="text-right q-mr-md">
                       <div
                         class="text-h6 text-weight-bold"
-                        :class="getScoreColorClass(player.score)"
+                        :class="getScoreColorClass(getPlayerTotalScore(player))"
                       >
-                        {{ player.score >= 0 ? '+' : '' }}{{ player.score }}
+                        {{ getPlayerTotalScore(player) >= 0 ? '+' : ''
+                        }}{{ getPlayerTotalScore(player) }}
                       </div>
                       <div class="text-caption text-grey-6">vs par</div>
                     </div>
@@ -345,7 +399,6 @@ import { usePocketbase } from 'src/composables/usePocketbase';
 import { useRoute } from 'vue-router';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getScoreColor } from 'src/constants/scoreColors';
 import { getFileUrl } from 'src/utils/pocketbase-helpers';
 import CourseInfoCard from 'src/components/CourseInfoCard.vue';
 
@@ -365,11 +418,14 @@ const favoritePlayers = ref([]);
 const selectedEventCourse = ref(null);
 const categoryMapping = ref({}); // Mapping van categorie ID naar naam
 const selectedCategory = ref('all'); // Categorie filter
+const recentScores = ref([]); // Recente scores voor de ticker
+const tickerQueue = ref([]); // Queue van scores voor de ticker
+const tickerPosition = ref(0); // Positie van de ticker voor scrolling
+const shownScores = ref(new Set()); // Set van scores die al getoond zijn
 
 // Map state
 const mapContainer = ref(null);
 let map = null;
-const playerMarkers = {};
 let courseMarkers = [];
 let courseLines = [];
 
@@ -401,7 +457,7 @@ const filteredEvents = computed(() => {
 
       return false;
     })
-    .sort((a, b) => new Date(b.startdate) - new Date(a.startdate)); // Nieuwste eerst
+    .sort((a, b) => new Date(b.startdate).getTime() - new Date(a.startdate).getTime()); // Nieuwste eerst
 });
 
 const availableCoursesWithEvents = computed(() => {
@@ -439,52 +495,84 @@ const categoryFilterOptions = [
 const leaderboard = computed(() => {
   if (!eventRounds.value.length) return [];
 
-  const currentLeaderboard = eventRounds.value
-    .map((round) => {
-      const playerScores = eventScores.value.filter((s) => s.round === round.id);
-      const totalScore = playerScores.reduce((sum, score) => {
-        return sum + ((score.score_player || 3) - 3); // T.o.v. par
-      }, 0);
+  // Interface voor speler groep
+  interface PlayerGroup {
+    id: string;
+    name: string;
+    category: string;
+    categoryName: string | null;
+    rounds: unknown[];
+    totalScore: number;
+    totalHolesPlayed: number;
+    currentHole: number;
+  }
 
-      // Bepaal huidige hole (laatste hole met score + 1)
-      const lastScoredHole = Math.max(...playerScores.map((s) => s.hole_number), 0);
-      const currentHole = lastScoredHole < totalHoles.value ? lastScoredHole + 1 : totalHoles.value;
+  // Groepeer rondes per speler
+  const playerGroups: Record<string, PlayerGroup> = {};
 
-      const playerCategoryId = round.expand?.player?.category;
-      const playerCategoryName = getCategoryName(playerCategoryId);
+  eventRounds.value.forEach((round) => {
+    const playerId = round.player;
+    const playerName = round.expand?.player?.name || 'Onbekende speler';
+    const playerCategoryId = round.expand?.player?.category;
+    const playerCategoryName = getCategoryName(playerCategoryId);
 
-      return {
-        id: round.player,
-        name: round.expand?.player?.name || 'Onbekende speler',
-        score: totalScore,
-        holesPlayed: playerScores.length,
-        currentHole: currentHole,
-        roundId: round.id,
-        category: getCategoryFirstLetter(playerCategoryId), // Eerste letter van categorienaam
-        categoryName: playerCategoryName, // Volledige categorienaam voor filtering
+    if (!playerGroups[playerId]) {
+      playerGroups[playerId] = {
+        id: playerId,
+        name: playerName,
+        category: getCategoryFirstLetter(playerCategoryId),
+        categoryName: playerCategoryName,
+        rounds: [],
+        totalScore: 0,
+        totalHolesPlayed: 0,
+        currentHole: 0,
       };
-    })
-    .filter((player) => {
+    }
+
+    // Voeg ronde toe aan speler
+    playerGroups[playerId].rounds.push(round);
+
+    // Bereken scores voor deze ronde
+    const roundScores = eventScores.value.filter((s) => s.round === round.id);
+    const roundScore = roundScores.reduce((sum, score) => {
+      return sum + ((score.score_player || 3) - 3); // T.o.v. par
+    }, 0);
+
+    // Tel op bij totale score en holes
+    playerGroups[playerId].totalScore += roundScore;
+    playerGroups[playerId].totalHolesPlayed += roundScores.length;
+
+    // Bepaal huidige hole (laatste hole met score + 1)
+    const lastScoredHole = Math.max(...roundScores.map((s) => s.hole_number), 0);
+    const currentHole = lastScoredHole < totalHoles.value ? lastScoredHole + 1 : totalHoles.value;
+
+    // Update huidige hole als deze hoger is dan de vorige
+    if (currentHole > playerGroups[playerId].currentHole) {
+      playerGroups[playerId].currentHole = currentHole;
+    }
+  });
+
+  // Converteer naar array en filter op categorie
+  const currentLeaderboard = Object.values(playerGroups)
+    .filter((player: PlayerGroup) => {
       // Filter op geselecteerde categorie
-      console.log(
-        `Debug - Filtering player ${player.name}: categoryName="${player.categoryName}", selectedCategory="${selectedCategory.value}"`,
-      );
       if (selectedCategory.value === 'all') return true;
       const matches = player.categoryName?.toLowerCase() === selectedCategory.value;
-      console.log(`Debug - Match result: ${matches}`);
       return matches;
     })
-    .sort((a, b) => {
+    .sort((a: PlayerGroup, b: PlayerGroup) => {
       // Eerst sorteren op holes gespeeld (meeste bovenaan)
-      if (b.holesPlayed !== a.holesPlayed) {
-        return b.holesPlayed - a.holesPlayed;
+      if (b.totalHolesPlayed !== a.totalHolesPlayed) {
+        return b.totalHolesPlayed - a.totalHolesPlayed;
       }
       // Dan sorteren op score (laagste eerst)
-      return a.score - b.score;
+      return a.totalScore - b.totalScore;
     });
 
-  return currentLeaderboard.map((player, currentIndex) => ({
+  return currentLeaderboard.map((player: PlayerGroup, currentIndex) => ({
     ...player,
+    score: player.totalScore,
+    holesPlayed: player.totalHolesPlayed,
     currentRank: currentIndex + 1,
   }));
 });
@@ -499,18 +587,6 @@ const formatDate = (dateString: string) => {
     month: 'short',
     day: 'numeric',
   });
-};
-
-const getCourseName = (course: unknown) => {
-  if (!course) return null;
-
-  // Als course een array is, neem de eerste
-  if (Array.isArray(course)) {
-    return course[0]?.name || null;
-  }
-
-  // Als course een enkel object is
-  return course.name || null;
 };
 
 // Verwijderd omdat niet meer gebruikt
@@ -583,16 +659,11 @@ const getPlayerRounds = (player) => {
       }
       return 0;
     });
-  console.log(`Debug - Rondes voor speler ${player.name}:`, rounds);
   return rounds;
 };
 
 const getHoleScore = (player, roundId, holeNumber) => {
   const score = eventScores.value.find((s) => s.round === roundId && s.hole_number === holeNumber);
-  console.log(
-    `Debug - Hole score voor speler ${player.name}, ronde ${roundId}, hole ${holeNumber}:`,
-    score?.score_player || null,
-  );
   return score?.score_player || null;
 };
 
@@ -621,6 +692,22 @@ const getRoundTotalScore = (player, roundId) => {
   const totalScore = roundScores.reduce((sum, score) => {
     return sum + ((score.score_player || 3) - 3); // T.o.v. par
   }, 0);
+  return totalScore;
+};
+
+// Nieuwe functie om totale score van speler over alle rondes te berekenen
+const getPlayerTotalScore = (player) => {
+  const playerRounds = eventRounds.value.filter((r) => r.player === player.id);
+  let totalScore = 0;
+
+  playerRounds.forEach((round) => {
+    const roundScores = eventScores.value.filter((s) => s.round === round.id);
+    const roundScore = roundScores.reduce((sum, score) => {
+      return sum + ((score.score_player || 3) - 3); // T.o.v. par
+    }, 0);
+    totalScore += roundScore;
+  });
+
   return totalScore;
 };
 
@@ -919,6 +1006,9 @@ const onEventChange = async () => {
       // Dan event data laden
       await loadEventData();
 
+      // Start websocket subscriptions voor real-time updates
+      startWebsocketSubscriptions();
+
       // Voeg baan visueel toe aan map (alleen als map beschikbaar is)
       if (map) {
         addCourseToMapVisual();
@@ -931,6 +1021,9 @@ const onEventChange = async () => {
         icon: 'error',
       });
     }
+  } else {
+    // Stop websocket subscriptions als geen event geselecteerd
+    stopWebsocketSubscriptions();
   }
 };
 
@@ -978,10 +1071,18 @@ const refreshLiveData = async () => {
 // Auto-refresh interval
 let refreshInterval = null;
 
+// Websocket subscriptions
+let roundsSubscription = null;
+let scoresSubscription = null;
+let eventsSubscription = null;
+
+// Ticker animation
+let tickerAnimation = null;
+
 const startAutoRefresh = () => {
-  refreshInterval = setInterval(async () => {
+  refreshInterval = setInterval(() => {
     if (selectedEvent.value) {
-      await loadEventData();
+      void loadEventData();
     }
   }, 30000); // Elke 30 seconden
 };
@@ -990,6 +1091,285 @@ const stopAutoRefresh = () => {
   if (refreshInterval) {
     clearInterval(refreshInterval);
     refreshInterval = null;
+  }
+};
+
+// Websocket real-time subscriptions
+const startWebsocketSubscriptions = () => {
+  if (!selectedEvent.value) return;
+
+  // Stop bestaande subscriptions
+  stopWebsocketSubscriptions();
+
+  try {
+    // Stop polling omdat we nu websockets gebruiken
+    stopAutoRefresh();
+
+    // Subscribe to rounds changes for this event
+    roundsSubscription = pb.collection('rounds').subscribe('*', (e) => {
+      if (e.record.event === selectedEvent.value) {
+        console.log('Rounds update received:', e);
+        handleRoundsUpdate(e);
+      }
+    });
+
+    // Subscribe to scores changes
+    scoresSubscription = pb.collection('round_scores').subscribe('*', (e) => {
+      // Check if this score belongs to a round of the current event
+      const roundId = e.record.round;
+      const round = eventRounds.value.find((r) => r.id === roundId);
+      if (round) {
+        console.log('Scores update received:', e);
+        handleScoresUpdate(e);
+      }
+    });
+
+    // Subscribe to events changes (for event status updates)
+    eventsSubscription = pb.collection('events').subscribe('*', (e) => {
+      if (e.record.id === selectedEvent.value) {
+        console.log('Event update received:', e);
+        handleEventUpdate(e);
+      }
+    });
+
+    console.log('Websocket subscriptions started for event:', selectedEvent.value);
+
+    // Toon melding dat real-time updates actief zijn
+    $q.notify({
+      color: 'positive',
+      message: 'Real-time updates actief',
+      icon: 'wifi',
+      timeout: 2000,
+    });
+  } catch (error) {
+    console.error('Error starting websocket subscriptions:', error);
+    $q.notify({
+      color: 'warning',
+      message: 'Real-time updates niet beschikbaar, terug naar polling',
+      icon: 'warning',
+    });
+    // Fallback naar polling als websockets falen
+    startAutoRefresh();
+  }
+};
+
+const stopWebsocketSubscriptions = () => {
+  try {
+    if (roundsSubscription) {
+      void pb.collection('rounds').unsubscribe(roundsSubscription);
+      roundsSubscription = null;
+    }
+    if (scoresSubscription) {
+      void pb.collection('round_scores').unsubscribe(scoresSubscription);
+      scoresSubscription = null;
+    }
+    if (eventsSubscription) {
+      void pb.collection('events').unsubscribe(eventsSubscription);
+      eventsSubscription = null;
+    }
+    console.log('Websocket subscriptions stopped');
+  } catch (error) {
+    console.error('Error stopping websocket subscriptions:', error);
+  }
+};
+
+// Handle real-time updates
+const handleRoundsUpdate = (e) => {
+  try {
+    // Reload rounds data
+    void pb
+      .collection('rounds')
+      .getList(1, 200, {
+        filter: `event = "${selectedEvent.value}"`,
+        expand: 'player,player.homecourse',
+      })
+      .then((roundsResult) => {
+        eventRounds.value = roundsResult.items;
+
+        // Update categorie mapping
+        void updateCategoryMapping();
+
+        // Show notification for new rounds
+        if (e.action === 'create') {
+          const playerName = e.record.expand?.player?.name || 'Onbekende speler';
+          $q.notify({
+            color: 'positive',
+            message: `Nieuwe ronde gestart door ${playerName}`,
+            icon: 'play_arrow',
+            timeout: 3000,
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('Error handling rounds update:', error);
+      });
+  } catch (error) {
+    console.error('Error handling rounds update:', error);
+  }
+};
+
+const handleScoresUpdate = (e) => {
+  try {
+    // Find the round this score belongs to
+    const roundId = e.record.round;
+    const round = eventRounds.value.find((r) => r.id === roundId);
+
+    if (!round) return;
+
+    // Update the specific score in our local data
+    const scoreIndex = eventScores.value.findIndex((s) => s.id === e.record.id);
+
+    if (e.action === 'create') {
+      // Add new score
+      const newScore = {
+        ...e.record,
+        hole_number: courseHoles.value.find((h) => h.id === e.record.hole)?.hole || 0,
+      };
+      eventScores.value.push(newScore);
+
+      // Add to recent scores ticker
+      addToRecentScores(newScore, round);
+
+      // Show notification for new scores
+      const playerName = round.expand?.player?.name || 'Onbekende speler';
+      const holeNumber = newScore.hole_number;
+      $q.notify({
+        color: 'info',
+        message: `${playerName} scoorde op hole ${holeNumber}`,
+        icon: 'golf_course',
+        timeout: 2000,
+      });
+    } else if (e.action === 'update' && scoreIndex !== -1) {
+      // Update existing score
+      eventScores.value[scoreIndex] = {
+        ...eventScores.value[scoreIndex],
+        ...e.record,
+        hole_number: courseHoles.value.find((h) => h.id === e.record.hole)?.hole || 0,
+      };
+    } else if (e.action === 'delete' && scoreIndex !== -1) {
+      // Remove deleted score
+      eventScores.value.splice(scoreIndex, 1);
+    }
+  } catch (error) {
+    console.error('Error handling scores update:', error);
+  }
+};
+
+const handleEventUpdate = (e) => {
+  // Handle event status changes or other event updates
+  if (e.action === 'update') {
+    $q.notify({
+      color: 'info',
+      message: 'Event informatie bijgewerkt',
+      icon: 'info',
+      timeout: 2000,
+    });
+  }
+};
+
+// Recent scores ticker functions
+const addToRecentScores = (score, round) => {
+  // Check of deze score al getoond is
+  if (shownScores.value.has(score.id)) {
+    return; // Skip als al getoond
+  }
+
+  const playerName = round.expand?.player?.name || 'Onbekende speler';
+  const holeNumber = score.hole_number;
+  const scoreValue = score.score_player || 3;
+  const scoreVsPar = scoreValue - 3; // T.o.v. par
+
+  // Bereken totale score van speler tot nu toe
+  const playerScores = eventScores.value.filter((s) => {
+    const playerRound = eventRounds.value.find((r) => r.id === s.round);
+    return playerRound && playerRound.player === round.player;
+  });
+
+  const totalScoreVsPar = playerScores.reduce((sum, s) => {
+    return sum + ((s.score_player || 3) - 3);
+  }, 0);
+
+  const tickerItem = {
+    id: score.id, // Gebruik originele score ID voor tracking
+    playerName,
+    holeNumber,
+    score: scoreValue,
+    scoreVsPar,
+    totalScoreVsPar,
+    timestamp: Date.now(),
+  };
+
+  // Voeg toe aan begin van array (nieuwste eerst)
+  recentScores.value.unshift(tickerItem);
+
+  // Behoud alleen laatste 10 items
+  if (recentScores.value.length > 10) {
+    recentScores.value = recentScores.value.slice(0, 10);
+  }
+
+  // Verwijder items ouder dan 5 minuten
+  const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+  recentScores.value = recentScores.value.filter((item) => item.timestamp > fiveMinutesAgo);
+
+  // Voeg toe aan ticker queue (voor animatie)
+  tickerQueue.value.push(tickerItem);
+
+  // Behoud queue op redelijke grootte
+  if (tickerQueue.value.length > 20) {
+    tickerQueue.value = tickerQueue.value.slice(-15);
+  }
+
+  // Start ticker animation als nog niet actief
+  startTickerAnimation();
+};
+
+// Ticker animation functions
+const startTickerAnimation = () => {
+  if (tickerAnimation) {
+    return; // Alleen starten als nog niet actief
+  }
+
+  // Start vanaf rechts (buiten het scherm) als eerste keer
+  if (tickerPosition.value === 0) {
+    tickerPosition.value = window.innerWidth;
+  }
+
+  const animate = () => {
+    tickerPosition.value -= 1; // Scroll naar links
+
+    // Check welke scores uit beeld zijn gegaan (links uit het scherm)
+    const itemWidth = 400; // Geschatte breedte per score item
+    const itemsOutOfView = Math.floor(Math.abs(tickerPosition.value) / itemWidth);
+
+    // Verwijder scores die uit beeld zijn gegaan
+    if (itemsOutOfView > 0 && tickerQueue.value.length > 0) {
+      const itemsToRemove = Math.min(itemsOutOfView, tickerQueue.value.length);
+      for (let i = 0; i < itemsToRemove; i++) {
+        const removedScore = tickerQueue.value.shift();
+        if (removedScore) {
+          shownScores.value.add(removedScore.id);
+        }
+      }
+      // Reset positie na verwijdering
+      tickerPosition.value += itemsToRemove * itemWidth;
+    }
+
+    // Reset positie als alle tekst voorbij is (links uit het scherm)
+    const totalWidth = tickerQueue.value.length * 400 + window.innerWidth;
+    if (tickerPosition.value < -totalWidth) {
+      tickerPosition.value = window.innerWidth;
+    }
+
+    tickerAnimation = requestAnimationFrame(animate);
+  };
+
+  tickerAnimation = requestAnimationFrame(animate);
+};
+
+const stopTickerAnimation = () => {
+  if (tickerAnimation) {
+    cancelAnimationFrame(tickerAnimation);
+    tickerAnimation = null;
   }
 };
 
@@ -1012,7 +1392,6 @@ onMounted(async () => {
     const event = availableEvents.value.find((e) => e.id === queryEvent);
     if (event) {
       selectedEvent.value = queryEvent;
-      console.log('Event automatisch geselecteerd via query parameter:', event.name);
 
       try {
         // Laad eerst baan informatie
@@ -1020,6 +1399,12 @@ onMounted(async () => {
 
         // Dan event data laden
         await loadEventData();
+
+        // Start websocket subscriptions voor real-time updates
+        startWebsocketSubscriptions();
+
+        // Start ticker animation
+        startTickerAnimation();
 
         // Voeg baan visueel toe aan map (alleen als map beschikbaar is)
         if (map) {
@@ -1036,7 +1421,14 @@ onMounted(async () => {
     }
   }
 
+  // Start polling als fallback (wordt gestopt zodra websockets actief zijn)
   startAutoRefresh();
+});
+
+onUnmounted(() => {
+  stopAutoRefresh();
+  stopWebsocketSubscriptions();
+  stopTickerAnimation();
 });
 
 // Watch voor map initialisatie
@@ -1322,5 +1714,57 @@ const selectedEventCourseCountry = ref(null);
   width: 40px;
   text-align: center;
   flex: 0 0 40px;
+}
+
+/* Live Ticker Styling */
+.live-ticker-full {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 8px 12px;
+  border: 1px solid #e9ecef;
+}
+
+.ticker-header-minimal {
+  display: flex;
+  align-items: center;
+  color: #6c757d;
+  margin-bottom: 6px;
+}
+
+.ticker-container-full {
+  position: relative;
+  overflow: hidden;
+  height: 32px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.ticker-content-full {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  white-space: nowrap;
+  padding: 0 12px;
+  transition: transform 0.1s linear;
+}
+
+.ticker-text-full {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  line-height: 1.3;
+  color: #495057;
+  margin-right: 16px;
+}
+
+.ticker-separator-full {
+  color: #6c757d;
+  font-weight: normal;
+}
+
+.ticker-buffer {
+  color: transparent;
+  font-size: 12px;
 }
 </style>
