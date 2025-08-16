@@ -13,62 +13,32 @@ import type { Course } from 'src/components/models';
 export const getFileUrl = (collectionName: string, recordId: string, fileName: string): string => {
   try {
     const authStore = useAuthStore();
-    console.log('Generating file URL with:', {
-      collectionName,
-      recordId,
-      fileName,
-      baseUrl: pb.baseUrl,
-      token: authStore.user?.token,
-      pbAuthToken: pb.authStore.token,
-      pbAuthValid: pb.authStore.isValid,
-      pbAuthModel: pb.authStore.model,
-    });
 
     // Zorg ervoor dat de token is ingesteld
     if (authStore.user?.token) {
       pb.authStore.save(authStore.user.token);
     }
 
-    // Debug de pb.files object
-    console.log('pb.files object:', {
-      hasGetURL: typeof pb.files.getURL === 'function',
-      files: pb.files,
-    });
-
     // Probeer eerst de getURL methode
     let url = '';
     try {
       url = pb.files.getURL({ record: recordId, filename: fileName }, collectionName);
     } catch (error) {
-      console.error('Error using getURL:', error);
+      // Fallback naar directe URL constructie
     }
 
     // Als de URL leeg is, probeer dan een fallback URL te genereren
     if (!url) {
-      console.log('Generating fallback URL');
       url = `${pb.baseUrl}/api/files/${collectionName}/${recordId}/${fileName}`;
     }
 
-    console.log('Final URL:', url);
-
     // Controleer of de URL geldig is
-    if (!url) {
-      console.error('Generated URL is empty');
-      return '';
-    }
-
-    // Controleer of de URL begint met de baseUrl
-    if (!url.startsWith(pb.baseUrl)) {
-      console.error('Generated URL does not start with baseUrl:', {
-        url,
-        baseUrl: pb.baseUrl,
-      });
+    if (!url || !url.startsWith(pb.baseUrl)) {
       return '';
     }
 
     return url;
   } catch (error) {
-    console.error('Error generating file URL:', error);
     return '';
   }
 };
@@ -88,14 +58,11 @@ export const getThumbUrl = (
   thumbSize: string = '100x100',
 ): string => {
   try {
-    console.log('Generating thumb URL with:', { collectionName, recordId, fileName, thumbSize });
     const url = pb.files.getURL({ record: recordId, filename: fileName }, collectionName, {
       thumb: thumbSize,
     });
-    console.log('Generated thumb URL:', url);
     return url;
   } catch (error) {
-    console.error('Error generating thumb URL:', error);
     return '';
   }
 };
@@ -115,12 +82,9 @@ export const getFileUrlWithParams = (
   params: Record<string, string>,
 ): string => {
   try {
-    console.log('Generating file URL with params:', { collectionName, recordId, fileName, params });
     const url = pb.files.getURL({ record: recordId, filename: fileName }, collectionName, params);
-    console.log('Generated URL with params:', url);
     return url;
   } catch (error) {
-    console.error('Error generating file URL with params:', error);
     return '';
   }
 };

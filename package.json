@@ -1,8 +1,8 @@
 {
-  "name": "my-pnpapp",
+  "name": "pitch-putt-live",
   "version": "0.0.1",
-  "description": "A Quasar Project",
-  "productName": "Pitch-Putt App",
+  "description": "Live Pitch & Putt scores",
+  "productName": "Pitch-Putt Live",
   "author": "Renze Hasper <rh.hasper@me.com>",
   "type": "module",
   "private": true,

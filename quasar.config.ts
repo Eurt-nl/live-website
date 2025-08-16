@@ -150,13 +150,6 @@ export default defineConfig((/* ctx */) => {
     },
 
     // PWA configuratie verwijderd - project is nu een SPA
-              },
-              networkTimeoutSeconds: 10,
-            },
-          },
-        ];
-      },
-    },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-cordova-apps/configuring-cordova
     cordova: {

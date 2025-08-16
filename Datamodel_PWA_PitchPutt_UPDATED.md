@@ -1,8 +1,292 @@
 [
     {
-        "id": "pbc_3292755704",
+        "id": "_pb_users_auth_",
         "listRule": "@request.auth.id != \"\"",
-        "viewRule": "@request.auth.id != \"\"",
+        "viewRule": "",
+        "createRule": "",
+        "updateRule": "id = @request.auth.id",
+        "deleteRule": "id = @request.auth.id",
+        "name": "users",
+        "type": "auth",
+        "fields": [
+            {
+                "autogeneratePattern": "[a-z0-9]{15}",
+                "hidden": false,
+                "id": "text3208210256",
+                "max": 15,
+                "min": 15,
+                "name": "id",
+                "pattern": "^[a-z0-9]+$",
+                "presentable": false,
+                "primaryKey": true,
+                "required": true,
+                "system": true,
+                "type": "text"
+            },
+            {
+                "cost": 0,
+                "hidden": true,
+                "id": "password901924565",
+                "max": 0,
+                "min": 8,
+                "name": "password",
+                "pattern": "",
+                "presentable": false,
+                "required": true,
+                "system": true,
+                "type": "password"
+            },
+            {
+                "autogeneratePattern": "[a-zA-Z0-9]{50}",
+                "hidden": true,
+                "id": "text2504183744",
+                "max": 60,
+                "min": 30,
+                "name": "tokenKey",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": true,
+                "system": true,
+                "type": "text"
+            },
+            {
+                "exceptDomains": null,
+                "hidden": false,
+                "id": "email3885137012",
+                "name": "email",
+                "onlyDomains": null,
+                "presentable": false,
+                "required": true,
+                "system": true,
+                "type": "email"
+            },
+            {
+                "hidden": false,
+                "id": "bool1547992806",
+                "name": "emailVisibility",
+                "presentable": false,
+                "required": false,
+                "system": true,
+                "type": "bool"
+            },
+            {
+                "hidden": false,
+                "id": "bool256245529",
+                "name": "verified",
+                "presentable": false,
+                "required": false,
+                "system": true,
+                "type": "bool"
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text1579384326",
+                "max": 255,
+                "min": 0,
+                "name": "name",
+                "pattern": "",
+                "presentable": true,
+                "primaryKey": false,
+                "required": true,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "hidden": false,
+                "id": "file376926767",
+                "maxSelect": 1,
+                "maxSize": 0,
+                "mimeTypes": [
+                    "image/jpeg",
+                    "image/png",
+                    "image/svg+xml",
+                    "image/gif",
+                    "image/webp"
+                ],
+                "name": "avatar",
+                "presentable": false,
+                "protected": false,
+                "required": false,
+                "system": false,
+                "thumbs": null,
+                "type": "file"
+            },
+            {
+                "hidden": false,
+                "id": "number2214074478",
+                "max": null,
+                "min": null,
+                "name": "birthyear",
+                "onlyInt": true,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "pbc_955655590",
+                "hidden": false,
+                "id": "relation2539420341",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "homecourse",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "pbc_3292755704",
+                "hidden": false,
+                "id": "relation105650625",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "category",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "select2130353538",
+                "maxSelect": 1,
+                "name": "auth_method",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "select",
+                "values": [
+                    "email"
+                ]
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "pbc_3292755704",
+                "hidden": false,
+                "id": "relation1466534506",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "role",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "pbc_961350965",
+                "hidden": false,
+                "id": "relation1400097126",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "country",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "autodate2990389176",
+                "name": "created",
+                "onCreate": true,
+                "onUpdate": false,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            },
+            {
+                "hidden": false,
+                "id": "autodate3332085495",
+                "name": "updated",
+                "onCreate": true,
+                "onUpdate": true,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            }
+        ],
+        "indexes": [
+            "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
+            "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''",
+            "CREATE UNIQUE INDEX `idx_Olw8FNn6tN` ON `users` (`name`)"
+        ],
+        "system": false,
+        "authRule": "",
+        "manageRule": null,
+        "authAlert": {
+            "enabled": false,
+            "emailTemplate": {
+                "subject": "Login from a new location",
+                "body": "<p>Hello,</p>\n<p>We noticed a login to your {APP_NAME} account from a new location.</p>\n<p>If this was you, you may disregard this email.</p>\n<p><strong>If this wasn't you, you should immediately change your {APP_NAME} account password to revoke access from all other locations.</strong></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>"
+            }
+        },
+        "oauth2": {
+            "mappedFields": {
+                "id": "",
+                "name": "name",
+                "username": "",
+                "avatarURL": "avatar"
+            },
+            "enabled": false
+        },
+        "passwordAuth": {
+            "enabled": true,
+            "identityFields": [
+                "email"
+            ]
+        },
+        "mfa": {
+            "enabled": false,
+            "duration": 1800,
+            "rule": ""
+        },
+        "otp": {
+            "enabled": false,
+            "duration": 180,
+            "length": 8,
+            "emailTemplate": {
+                "subject": "OTP for {APP_NAME}",
+                "body": "<p>Hello,</p>\n<p>Your one-time password is: <strong>{OTP}</strong></p>\n<p><i>If you didn't ask for the one-time password, you can ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>"
+            }
+        },
+        "authToken": {
+            "duration": 604800
+        },
+        "passwordResetToken": {
+            "duration": 1800
+        },
+        "emailChangeToken": {
+            "duration": 1800
+        },
+        "verificationToken": {
+            "duration": 259200
+        },
+        "fileToken": {
+            "duration": 180
+        },
+        "verificationTemplate": {
+            "subject": "Bevestig jouw {APP_NAME} aanmelding.",
+            "body": "<p>Hallo,</p>\n<p>Hartelijk dank voor je aanmelding voor de {APP_NAME} app.</p>\n<p>Klik op de knop hieronder om je account te bevestigen.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-verification/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Bevestig account</a>\n</p>\n<p>\n  Hartelijk dank,<br/>\n  {APP_NAME}\n</p>"
+        },
+        "resetPasswordTemplate": {
+            "subject": "Reset your {APP_NAME} password",
+            "body": "<p>Hello,</p>\n<p>Click on the button below to reset your password.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-password-reset/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Reset password</a>\n</p>\n<p><i>If you didn't ask to reset your password, you can ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>"
+        },
+        "confirmEmailChangeTemplate": {
+            "subject": "Confirm your {APP_NAME} new email address",
+            "body": "<p>Hello,</p>\n<p>Click on the button below to confirm your new email address.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-email-change/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Confirm new email</a>\n</p>\n<p><i>If you didn't ask to change your email address, you can ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>"
+        }
+    },
+    {
+        "id": "pbc_3292755704",
+        "listRule": "",
+        "viewRule": "",
         "createRule": null,
         "updateRule": null,
         "deleteRule": null,
@@ -77,9 +361,9 @@
                     "status",
                     "payout",
                     "registration",
-                    "role",
                     "round",
-                    "user"
+                    "user",
+                    "role"
                 ]
             },
             {
@@ -241,7 +525,7 @@
     {
         "id": "pbc_1762296751",
         "listRule": "",
-        "viewRule": "@request.auth.id != \"\"",
+        "viewRule": "",
         "createRule": "@request.auth.id != \"\"",
         "updateRule": "@request.auth.id != \"\"",
         "deleteRule": "@request.auth.id != \"\"",
@@ -383,8 +667,8 @@
     },
     {
         "id": "pbc_955655590",
-        "listRule": "@request.auth.id != \"\"",
-        "viewRule": "@request.auth.id != \"\"",
+        "listRule": "",
+        "viewRule": "",
         "createRule": "@request.auth.id != \"\"",
         "updateRule": "owner = @request.auth.id || moderators ?~ @request.auth.id || @request.auth.role = \"admin\" || (@request.auth.role.cat_type = \"role\" && @request.auth.role.name = \"superuser\")",
         "deleteRule": "owner = @request.auth.id || @request.auth.role = \"admin\"",
@@ -714,8 +998,8 @@
     },
     {
         "id": "pbc_1687431684",
-        "listRule": "@request.auth.id != \"\"",
-        "viewRule": "@request.auth.id != \"\"",
+        "listRule": "",
+        "viewRule": "",
         "createRule": "@request.auth.id != \"\"",
         "updateRule": "@request.auth.id != \"\"",
         "deleteRule": "@request.auth.id != \"\"",
@@ -989,10 +1273,129 @@
         "system": false
     },
     {
+        "id": "pbc_1720526412",
+        "listRule": "",
+        "viewRule": "",
+        "createRule": "@request.auth.id != ''",
+        "updateRule": "@request.auth.id != ''",
+        "deleteRule": "@request.auth.id != ''",
+        "name": "local_rules",
+        "type": "base",
+        "fields": [
+            {
+                "autogeneratePattern": "[a-z0-9]{15}",
+                "hidden": false,
+                "id": "text3208210256",
+                "max": 15,
+                "min": 15,
+                "name": "id",
+                "pattern": "^[a-z0-9]+$",
+                "presentable": false,
+                "primaryKey": true,
+                "required": true,
+                "system": true,
+                "type": "text"
+            },
+            {
+                "cascadeDelete": true,
+                "collectionId": "pbc_955655590",
+                "hidden": false,
+                "id": "relation379482041",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "course",
+                "presentable": true,
+                "required": true,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "number1758281105",
+                "max": 18,
+                "min": 1,
+                "name": "hole",
+                "onlyInt": true,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text724990059",
+                "max": 100,
+                "min": 3,
+                "name": "title",
+                "pattern": "",
+                "presentable": true,
+                "primaryKey": false,
+                "required": true,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "convertURLs": true,
+                "hidden": false,
+                "id": "editor1843675174",
+                "maxSize": 0,
+                "name": "description",
+                "presentable": false,
+                "required": true,
+                "system": false,
+                "type": "editor"
+            },
+            {
+                "hidden": false,
+                "id": "json2363381545",
+                "maxSize": 0,
+                "name": "type",
+                "presentable": false,
+                "required": true,
+                "system": false,
+                "type": "json"
+            },
+            {
+                "hidden": false,
+                "id": "bool1260321794",
+                "name": "active",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "bool"
+            },
+            {
+                "hidden": false,
+                "id": "autodate2990389176",
+                "name": "created",
+                "onCreate": true,
+                "onUpdate": false,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            },
+            {
+                "hidden": false,
+                "id": "autodate3332085495",
+                "name": "updated",
+                "onCreate": true,
+                "onUpdate": true,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            }
+        ],
+        "indexes": [
+            "CREATE INDEX `idx_course_hole_active` ON `local_rules` (\n  `course`,\n  `hole`,\n  `active`\n)"
+        ],
+        "system": false
+    },
+    {
         "id": "pbc_2301922722",
         "listRule": "",
         "viewRule": "",
-        "createRule": "@request.auth.id != \"\"",
+        "createRule": "",
         "updateRule": "",
         "deleteRule": "",
         "name": "notifications",
@@ -1122,6 +1525,61 @@
                 "system": false,
                 "thumbs": [],
                 "type": "file"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "_pb_users_auth_",
+                "hidden": false,
+                "id": "relation2037886635",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "handeld_by",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text2539659139",
+                "max": 0,
+                "min": 0,
+                "name": "template",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": false,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text2918445923",
+                "max": 0,
+                "min": 0,
+                "name": "data",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": false,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text4152661668",
+                "max": 0,
+                "min": 0,
+                "name": "original_language",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": false,
+                "system": false,
+                "type": "text"
             },
             {
                 "hidden": false,
@@ -1258,6 +1716,142 @@
             }
         ],
         "indexes": [],
+        "system": false
+    },
+    {
+        "id": "pbc_3131469214",
+        "listRule": "",
+        "viewRule": "",
+        "createRule": "@request.auth.id != ''",
+        "updateRule": "@request.auth.id != ''",
+        "deleteRule": "@request.auth.id != ''",
+        "name": "rafi_chats",
+        "type": "base",
+        "fields": [
+            {
+                "autogeneratePattern": "[a-z0-9]{15}",
+                "hidden": false,
+                "id": "text3208210256",
+                "max": 15,
+                "min": 15,
+                "name": "id",
+                "pattern": "^[a-z0-9]+$",
+                "presentable": false,
+                "primaryKey": true,
+                "required": true,
+                "system": true,
+                "type": "text"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "_pb_users_auth_",
+                "hidden": false,
+                "id": "relation2375276105",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "user",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "pbc_955655590",
+                "hidden": false,
+                "id": "relation379482041",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "course",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text3069659470",
+                "max": 2000,
+                "min": 0,
+                "name": "question",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": true,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text3671935525",
+                "max": 5000,
+                "min": 0,
+                "name": "answer",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": true,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "hidden": false,
+                "id": "json1867959184",
+                "maxSize": 0,
+                "name": "used_rules",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "json"
+            },
+            {
+                "hidden": false,
+                "id": "number479369857",
+                "max": null,
+                "min": 0,
+                "name": "distance",
+                "onlyInt": true,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "json107927383",
+                "maxSize": 0,
+                "name": "client_meta",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "json"
+            },
+            {
+                "hidden": false,
+                "id": "autodate2990389176",
+                "name": "created",
+                "onCreate": true,
+                "onUpdate": false,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            },
+            {
+                "hidden": false,
+                "id": "autodate3332085495",
+                "name": "updated",
+                "onCreate": true,
+                "onUpdate": true,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            }
+        ],
+        "indexes": [
+            "CREATE INDEX `idx_course_created` ON `rafi_chats` (\n  `course`,\n  `created`\n)"
+        ],
         "system": false
     },
     {
@@ -1587,8 +2181,8 @@
     },
     {
         "id": "pbc_2491370228",
-        "listRule": "@request.auth.id != \"\"",
-        "viewRule": "@request.auth.id != \"\"",
+        "listRule": "",
+        "viewRule": "",
         "createRule": "@request.auth.id != \"\"",
         "updateRule": "@request.auth.id != \"\"",
         "deleteRule": null,
@@ -1707,6 +2301,39 @@
             },
             {
                 "hidden": false,
+                "id": "number2998279044",
+                "max": null,
+                "min": null,
+                "name": "putts",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "number1192725683",
+                "max": null,
+                "min": null,
+                "name": "chips",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "bool3102590025",
+                "name": "gir",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "bool"
+            },
+            {
+                "hidden": false,
                 "id": "autodate2990389176",
                 "name": "created",
                 "onCreate": true,
@@ -1731,8 +2358,8 @@
     },
     {
         "id": "pbc_225224730",
-        "listRule": "@request.auth.id != \"\"",
-        "viewRule": "@request.auth.id != \"\"",
+        "listRule": "",
+        "viewRule": "",
         "createRule": "@request.auth.id != \"\"",
         "updateRule": "@request.auth.id != \"\"",
         "deleteRule": "@request.auth.id != \"\"",
@@ -2013,6 +2640,24 @@
             },
             {
                 "hidden": false,
+                "id": "bool458715613",
+                "name": "is_active",
+                "presentable": true,
+                "required": false,
+                "system": false,
+                "type": "bool"
+            },
+            {
+                "hidden": false,
+                "id": "bool2470667982",
+                "name": "is_finalized",
+                "presentable": true,
+                "required": false,
+                "system": false,
+                "type": "bool"
+            },
+            {
+                "hidden": false,
                 "id": "autodate2990389176",
                 "name": "created",
                 "onCreate": true,
@@ -2062,7 +2707,7 @@
             {
                 "autogeneratePattern": "",
                 "hidden": false,
-                "id": "_clone_rlhe",
+                "id": "_clone_opQe",
                 "max": 0,
                 "min": 0,
                 "name": "name",
@@ -2075,7 +2720,7 @@
             },
             {
                 "hidden": false,
-                "id": "_clone_xR7L",
+                "id": "_clone_KhkC",
                 "maxSize": 0,
                 "name": "gps",
                 "presentable": false,

@@ -1,6 +1,5 @@
-# Pitch-Putt App (my-pnpapp)
+# Pitch-Putt Live
 
-A Quasar Project
 
 ## Install the dependencies
 ```bash

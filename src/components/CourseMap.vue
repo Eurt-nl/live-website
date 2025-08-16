@@ -23,7 +23,14 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { usePocketbase } from 'src/composables/usePocketbase';
 import type { Hole } from 'src/components/models';
-import { getThumbUrl, getFileUrl } from 'src/utils/pocketbase-helpers';
+import { getFileUrl } from 'src/utils/pocketbase-helpers';
+
+// Extend Window interface for global function
+declare global {
+  interface Window {
+    __showHoleImage: (url: string) => void;
+  }
+}
 
 // Dialog state voor grote afbeelding
 const showImageDialog = ref(false);
@@ -70,8 +77,8 @@ const loadHoles = async () => {
 
     console.log('CourseMap: Holes result:', result.items.length, 'holes found');
     if (result && result.items && result.items.length > 0) {
-      holes.value = result.items;
-      emit('update:holes', result.items);
+      holes.value = result.items as unknown as Hole[];
+      emit('update:holes', result.items as unknown as Hole[]);
       console.log('CourseMap: Holes loaded, calling updateMap with', holes.value.length, 'holes');
       updateMap();
     } else {
@@ -111,67 +118,58 @@ const updateMap = () => {
       }
     });
 
-    let totalLat = 0;
-    let totalLng = 0;
-    let pointCount = 0;
-    let bounds = L.latLngBounds([]);
+    const bounds = L.latLngBounds([]);
 
-        // Voeg markers en lijnen toe voor elke hole
+    // Voeg markers en lijnen toe voor elke hole
     console.log('CourseMap: Processing', holes.value.length, 'holes for markers');
-    holes.value.forEach((hole, index) => {
+    holes.value.forEach((hole) => {
       console.log('CourseMap: Processing hole', hole.hole, 'GPS tee:', hole.gps_tee);
       if (hole.gps_tee?.latitude && hole.gps_tee?.longitude) {
         const teeLatLng = L.latLng(hole.gps_tee.latitude, hole.gps_tee.longitude);
-        totalLat += hole.gps_tee.latitude;
-        totalLng += hole.gps_tee.longitude;
-        pointCount++;
         bounds.extend(teeLatLng);
 
         console.log('CourseMap: Adding tee marker for hole', hole.hole, 'at:', teeLatLng);
-        const teeMarker = L.marker(teeLatLng, {
+        L.marker(teeLatLng, {
           icon: teeIcon,
-        }).addTo(map.value!);
+        }).addTo(map.value as L.Map);
 
-      if (hole.gps_green?.latitude && hole.gps_green?.longitude) {
-        const greenLatLng = L.latLng(hole.gps_green.latitude, hole.gps_green.longitude);
-        totalLat += hole.gps_green.latitude;
-        totalLng += hole.gps_green.longitude;
-        pointCount++;
-        bounds.extend(greenLatLng);
+        if (hole.gps_green?.latitude && hole.gps_green?.longitude) {
+          const greenLatLng = L.latLng(hole.gps_green.latitude, hole.gps_green.longitude);
+          bounds.extend(greenLatLng);
 
-        console.log('CourseMap: Adding green marker for hole', hole.hole, 'at:', greenLatLng);
-        const greenMarker = L.marker(greenLatLng, {
-          icon: greenIcon,
-        }).addTo(map.value!);
+          console.log('CourseMap: Adding green marker for hole', hole.hole, 'at:', greenLatLng);
+          L.marker(greenLatLng, {
+            icon: greenIcon,
+          }).addTo(map.value as L.Map);
 
-        // Teken een lijn tussen tee en green
-        const line = L.polyline([teeLatLng, greenLatLng], {
-          color: '#1976D2',
-          weight: 2,
-        }).addTo(map.value!);
+          // Teken een lijn tussen tee en green
+          L.polyline([teeLatLng, greenLatLng], {
+            color: '#1976D2',
+            weight: 2,
+          }).addTo(map.value as L.Map);
 
-        // Voeg een label toe aan de lijn
-        const label = L.marker(
-          [
-            (hole.gps_tee.latitude + hole.gps_green.latitude) / 2,
-            (hole.gps_tee.longitude + hole.gps_green.longitude) / 2,
-          ],
-          {
-            icon: L.divIcon({
-              className: 'hole-label',
-              html: `<div class="hole-label-inner">${hole.hole}</div>`,
-              iconSize: [30, 20],
-            }),
-          },
-        ).addTo(map.value!);
+          // Voeg een label toe aan de lijn
+          const label = L.marker(
+            [
+              (hole.gps_tee.latitude + hole.gps_green.latitude) / 2,
+              (hole.gps_tee.longitude + hole.gps_green.longitude) / 2,
+            ],
+            {
+              icon: L.divIcon({
+                className: 'hole-label',
+                html: `<div class="hole-label-inner">${hole.hole}</div>`,
+                iconSize: [30, 20],
+              }),
+            },
+          ).addTo(map.value as L.Map);
 
-        // Voeg een popup toe aan de label
-        let thumbHtml = '';
-        if (hole.image) {
-          const imgUrl = getFileUrl('course_detail', hole.id, hole.image);
-          thumbHtml = `<img src="${imgUrl}" alt="Hole foto" style="width:100px;max-width:100px;max-height:100px;object-fit:cover;border-radius:6px;margin-bottom:8px;cursor:pointer;" onclick="window.__showHoleImage && window.__showHoleImage('${imgUrl}')" />`;
-        }
-        label.bindPopup(`
+          // Voeg een popup toe aan de label
+          let thumbHtml = '';
+          if (hole.image) {
+            const imgUrl = getFileUrl('course_detail', hole.id, hole.image);
+            thumbHtml = `<img src="${imgUrl}" alt="Hole foto" style="width:100px;max-width:100px;max-height:100px;object-fit:cover;border-radius:6px;margin-bottom:8px;cursor:pointer;" onclick="window.__showHoleImage && window.__showHoleImage('${imgUrl}')" />`;
+          }
+          label.bindPopup(`
           <div class="hole-popup">
             ${thumbHtml}
             <div class="text-h6">Hole ${hole.hole}</div>
@@ -179,9 +177,9 @@ const updateMap = () => {
             <div class="text-subtitle2">Index: ${String(hole.hole_index).padStart(2, '0')}</div>
           </div>
         `);
+        }
       }
-    }
-  });
+    });
 
     // Pas de kaart aan om alle markers te tonen met een kleine marge
     if (bounds.isValid()) {
@@ -218,12 +216,12 @@ onMounted(() => {
         attribution:
           'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
       },
-    ).addTo(map.value);
+    ).addTo(map.value as L.Map);
 
     // Wacht even voordat we holes laden om ervoor te zorgen dat de map volledig is geladen
     setTimeout(() => {
       console.log('CourseMap: Loading holes after map initialization');
-      loadHoles();
+      void loadHoles();
     }, 100);
   }
   // Registreer globale functie voor popup click
@@ -245,7 +243,7 @@ watch(
       // Wacht even voordat we holes laden om ervoor te zorgen dat de map reset is voltooid
       setTimeout(() => {
         console.log('CourseMap: Loading holes after map reset');
-        loadHoles();
+        void loadHoles();
       }, 100);
     } else if (!map.value) {
       console.log('CourseMap: Map not ready yet, will load holes when map is available');
@@ -259,7 +257,7 @@ watch(
   (newMap) => {
     if (newMap && props.courseId) {
       console.log('CourseMap: Map became available, loading holes');
-      loadHoles();
+      void loadHoles();
     }
   },
 );
